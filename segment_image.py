@@ -39,7 +39,6 @@ def seg_everything(image_path):
 
             # Create an alpha mask
             alpha = mask_cropped.convert('L')  # Convert mask to mode 'L' (grayscale)
-            alpha = ImageOps.invert(alpha)  # Invert the mask
 
             # Combine the original image with the alpha mask
             result = Image.fromarray(np.array(region), mode='RGBA')  # Ensure result image is in RGBA mode
