@@ -46,6 +46,11 @@ def seg_everything(image_path):
             region_with_mask.save(result_bytes, format="PNG")
             result_bytes.seek(0)
             zip_file.writestr(f"seg_{idx}.png", result_bytes.read())
+
+            # If it's the first slice, save it separately
+            if idx == 0:
+                seg_0_filename = f"{image_path.rsplit('.', 1)[0]}_seg_0.png"
+                region_with_mask.save(seg_0_filename, format="PNG")
     
     # Save the zip file
     with open(f"{image_path.rsplit('.', 1)[0]}.zip", 'wb') as f:
