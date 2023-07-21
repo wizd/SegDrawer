@@ -31,8 +31,8 @@ def read_content(file_path: str) -> str:
 
     return content
 
-sam_checkpoint = "sam_vit_l_0b3195.pth" # "sam_vit_l_0b3195.pth" or "sam_vit_h_4b8939.pth"
-model_type = "vit_l" # "vit_l" or "vit_h"
+sam_checkpoint = "sam_vit_h_4b8939.pth" # "sam_vit_l_0b3195.pth" or "sam_vit_h_4b8939.pth"
+model_type = "vit_h" # "vit_l" or "vit_h"
 # device = "cuda" # "cuda" if torch.cuda.is_available() else "cpu"
 if torch.cuda.is_available():
     print('Using GPU')
