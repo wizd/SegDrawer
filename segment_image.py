@@ -1,6 +1,6 @@
 import argparse
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 from io import BytesIO
 import zipfile
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry, SamPredictor
@@ -30,27 +30,31 @@ def seg_everything(image_path):
     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
         for idx, ann in enumerate(sorted_anns, 0):
             left, top, right, bottom = ann["bbox"][0], ann["bbox"][1], ann["bbox"][0] + ann["bbox"][2], ann["bbox"][1] + ann["bbox"][3]
-            cropped = PIL_GLOBAL_IMAGE.crop((left, top, right, bottom))
-            transparent = Image.new("RGBA", cropped.size, (0, 0, 0, 0))
             mask = Image.fromarray(ann["segmentation"].astype(np.uint8) * 255)
             mask_cropped = mask.crop((left, top, right, bottom))
-            result = Image.composite(cropped.convert("RGBA"), transparent, mask_cropped)
 
             # Apply the mask to the original image
-            original_image = Image.open(image_path)
+            original_image = Image.open(image_path).convert('RGBA')  # Ensure original image is in RGBA mode
             region = original_image.crop((left, top, right, bottom))
-            region_with_mask = Image.composite(region, Image.new('RGB', region.size), mask_cropped.convert('L'))
+
+            # Create an alpha mask
+            alpha = mask_cropped.convert('L')  # Convert mask to mode 'L' (grayscale)
+            alpha = ImageOps.invert(alpha)  # Invert the mask
+
+            # Combine the original image with the alpha mask
+            result = Image.fromarray(np.array(region), mode='RGBA')  # Ensure result image is in RGBA mode
+            result.putalpha(alpha)
 
             # Save the result to the zip file
             result_bytes = BytesIO()
-            region_with_mask.save(result_bytes, format="PNG")
+            result.save(result_bytes, format="PNG")
             result_bytes.seek(0)
             zip_file.writestr(f"seg_{idx}.png", result_bytes.read())
 
             # If it's the first slice, save it separately
             if idx == 0:
                 seg_0_filename = f"{image_path.rsplit('.', 1)[0]}_seg_0.png"
-                region_with_mask.save(seg_0_filename, format="PNG")
+                result.save(seg_0_filename, format="PNG")
     
     # Save the zip file
     with open(f"{image_path.rsplit('.', 1)[0]}.zip", 'wb') as f:
