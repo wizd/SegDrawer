@@ -3,8 +3,7 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 import zipfile
-from base64 import b64encode
-from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
+from segment_anything import SamAutomaticMaskGenerator, sam_model_registry, SamPredictor
 
 def seg_everything(image_path):
     # Load the model
@@ -37,8 +36,14 @@ def seg_everything(image_path):
             mask_cropped = mask.crop((left, top, right, bottom))
             result = Image.composite(cropped.convert("RGBA"), transparent, mask_cropped)
 
+            # Apply the mask to the original image
+            original_image = Image.open(image_path)
+            region = original_image.crop((left, top, right, bottom))
+            region_with_mask = Image.composite(region, Image.new('RGB', region.size), mask_cropped.convert('L'))
+
+            # Save the result to the zip file
             result_bytes = BytesIO()
-            result.save(result_bytes, format="PNG")
+            region_with_mask.save(result_bytes, format="PNG")
             result_bytes.seek(0)
             zip_file.writestr(f"seg_{idx}.png", result_bytes.read())
     
